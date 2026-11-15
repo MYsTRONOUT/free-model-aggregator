@@ -177,10 +177,14 @@ function candidatesFor(requires: Requirement, api: 'openai' | 'anthropic', body:
 function requirementsFor(api: 'openai' | 'anthropic', body: Json): Requirement {
   const manifest = brief.workload?.manifest ?? [];
   const entry = manifest[manifestIndex];
-  manifestIndex += 1;
-  if (entry !== undefined && entry.api === api && entry.stream === (body.stream === true)) return entry.requires;
+  if (entry !== undefined && entry.api === api && entry.stream === (body.stream === true)) {
+    manifestIndex += 1;
+    return entry.requires;
+  }
   // The manifest is the declared source; this fallback is a guess for a brief that holds none, or a
-  // row whose api/stream does not match the request that arrived.
+  // row whose api/stream does not match the request that arrived. Do not consume the row on a
+  // mismatch: the manifest's next request is still the one at this index, and consuming the row
+  // would desync every later request from its own requirements for the rest of the trial.
   return requirementsFromBody(body);
 }
 
